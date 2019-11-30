@@ -27,7 +27,7 @@ function feedForward(xs) {
 
 }
 
-function backpropagation(ys, outputs) {
+function backpropagation(inputs, ys, outputs) {
 
     // Outputs of the hidden layer
     const hiddenOutputs = outputs.hiddenOutputs;
@@ -35,19 +35,35 @@ function backpropagation(ys, outputs) {
     // Outputs of the last layer(output layer)
     const predictions = outputs.prediction;
 
-    const outputError = ys.sub(predictions);
+    const outputError = predictions.sub(ys);
     const weights_ho_T = weights_ho.transpose();
     const hiddenErrors = tf.matMul(weights_ho_T, outputError);
-    const gradientOutput = sigmoidDerivative(hiddenErrors);
-
+    
+    // Calculate the gradient of the output layer
+    let gradientOutput = sigmoidDerivative(predictions);
     gradientOutput.mul(outputError);
     gradientOutput.mul(lr);
+    
+    // Reshape from [4] to [1, 4]
+    gradientOutput = gradientOutput.reshape([1, -1]);
 
     // Change in weights from HIDDEN --> OUTPUT
-    gradientOutput.print();
-    hiddenOutputs.print();
-    const deltaW_output = tf.matMul(gradientOutput, hiddenOutputs);
+    const deltaW_output = tf.matMul(hiddenOutputs, gradientOutput);
     weights_ho.add(deltaW_output);
+
+    // Gradients for next layer, more back propagation!
+
+    // Calculate the gradient of the hidden layer
+    const gradient_hidden = sigmoidDerivative(hiddenOutputs);
+
+    // Weight by errors and learning rate
+    gradient_hidden.mul(hiddenErrors);
+    gradient_hidden.mul(lr);
+
+    // Change in weights from INPUT --> HIDDEN
+    const inputs_T = inputs.transpose();
+    const deltaW_hidden = tf.matMul(gradient_hidden, inputs_T);
+    weights_ih.add(deltaW_hidden);
 
 
 
@@ -56,13 +72,22 @@ function backpropagation(ys, outputs) {
 function train(xs, ys) {
 
     const outputs = feedForward(xs);
-    return backpropagation(ys, outputs);
+    return backpropagation(xs, ys, outputs);
 
 }
 
 function sigmoidDerivative(errors) {
 
     const gradientErrors = errors.dataSync().map(x => x * (1 - x));
-    return tf.tensor(gradientErrors);
+    return tf.tensor(gradientErrors, errors.shape);
+
+}
+
+function crossEntropyLoss(yLabel, yPred) {
+
+    const delta = Math.abs(yLabel - yPred);
+    const firstPart = yLabel * Math.log(delta);
+    const secondPart = (1 - yLabel) * Math.log(Math.abs(1 - delta));
+    return firstPart - secondPart;
 
 }
