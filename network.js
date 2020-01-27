@@ -1,78 +1,72 @@
 import * as tf from '@tensorflow/tfjs';
 
-let weights_ih, weights_ho;
+let weights_ih, weights_ho, bias_ih, bias_ho;
 
 // Learning rate
-const lr = .1;
+const lr = .05;
 
 function build(inputNodes, hiddenNodes, outputNodes) {
 
+    // Weights
     weights_ih = tf.randomNormal([hiddenNodes, inputNodes]);
     weights_ho = tf.randomNormal([outputNodes, hiddenNodes]);
+
+    // Bias values
+    bias_ih = tf.randomUniform([1]).asScalar();
+    bias_ho = tf.randomUniform([1]).asScalar();
 
 }
 
 build(2, 4, 1);
-train(tf.tensor2d([0, 1], [2, 1]), tf.tensor2d([1], [1, 1]));
+for (let i = 0; i < 1000; i++) {
 
+    train(tf.tensor2d([0, 1], [2, 1]), tf.tensor2d([1], [1, 1]));
+
+    const pred = feedForward(tf.tensor2d([0, 1], [2, 1]));
+    pred.prediction.print();
+
+
+}
+const pred = feedForward(tf.tensor2d([0, 1], [2, 1]));
+pred.prediction.print();
 
 function feedForward(xs) {
 
     const hiddenOutputs = tf.matMul(weights_ih, xs).sigmoid();
     const prediction = tf.matMul(weights_ho, hiddenOutputs).sigmoid();
     return {
+        inputs: xs,
         hiddenOutputs: hiddenOutputs,
         prediction: prediction
     }
 
 }
 
-function backpropagation(inputs, ys, outputs) {
+function backpropagation(labels, outputs) {
 
-    // Outputs of the hidden layer
-    const hiddenOutputs = outputs.hiddenOutputs;
+    let output_error = tf.losses.sigmoidCrossEntropy(outputs.prediction, labels);
+    output_error = output_error.reshape(labels.shape);
+    let output_derivative = sigmoidDerivative(outputs.prediction);
+    output_derivative = output_derivative.mul(output_error);
+    output_derivative = output_derivative.mul(lr);
 
-    // Outputs of the last layer(output layer)
-    const predictions = outputs.prediction;
+    weights_ho = weights_ho.add(output_derivative);
 
-    const outputError = predictions.sub(ys);
-    const weights_ho_T = weights_ho.transpose();
-    const hiddenErrors = tf.matMul(weights_ho_T, outputError);
-    
-    // Calculate the gradient of the output layer
-    let gradientOutput = sigmoidDerivative(predictions);
-    gradientOutput.mul(outputError);
-    gradientOutput.mul(lr);
-    
-    // Reshape from [4] to [1, 4]
-    gradientOutput = gradientOutput.reshape([1, -1]);
+    const whoT = weights_ho.transpose();
 
-    // Change in weights from HIDDEN --> OUTPUT
-    const deltaW_output = tf.matMul(hiddenOutputs, gradientOutput);
-    weights_ho.add(deltaW_output);
+    const hidden_error = tf.matMul(whoT, output_error);
+    let hidden_derivative = sigmoidDerivative(outputs.hiddenOutputs);
+    hidden_derivative = hidden_derivative.mul(hidden_error);
+    hidden_derivative = hidden_derivative.mul(lr);
 
-    // Gradients for next layer, more back propagation!
-
-    // Calculate the gradient of the hidden layer
-    const gradient_hidden = sigmoidDerivative(hiddenOutputs);
-
-    // Weight by errors and learning rate
-    gradient_hidden.mul(hiddenErrors);
-    gradient_hidden.mul(lr);
-
-    // Change in weights from INPUT --> HIDDEN
-    const inputs_T = inputs.transpose();
-    const deltaW_hidden = tf.matMul(gradient_hidden, inputs_T);
-    weights_ih.add(deltaW_hidden);
-
-
+    weights_ih = weights_ih.add(hidden_derivative);
 
 }
 
 function train(xs, ys) {
 
     const outputs = feedForward(xs);
-    return backpropagation(xs, ys, outputs);
+    return backpropagation(ys, outputs);
 
 }
 
@@ -83,11 +77,18 @@ function sigmoidDerivative(errors) {
 
 }
 
-function crossEntropyLoss(yLabel, yPred) {
+function crossEntropyLoss(predictions, labels) {
 
-    const delta = Math.abs(yLabel - yPred);
-    const firstPart = yLabel * Math.log(delta);
-    const secondPart = (1 - yLabel) * Math.log(Math.abs(1 - delta));
+    const delta = Math.abs(labels - predictions);
+    const firstPart = labels * Math.log(delta);
+    const secondPart = (1 - labels) * Math.log(Math.abs(1 - delta));
     return firstPart - secondPart;
+
+}
+
+function meanSquaredError(predictions, labels) {
+
+    const cost = tf.sub(predictions, labels);
+    return tf.mul(cost, cost);
 
 }
