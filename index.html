@@ -1,17 +1,35 @@
 <html>
 
 <head>
-    <title>Simple RNN</title>
+    <title>Vanilla RNN</title>
     <meta charset=UTF-8>
     <meta name=viewport content="width=device-width, initial-scale=1">
 
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
 </head>
 
-<body>
-    
-    <!--<script src=index.js></script>-->
-    <!--<script src=network.js></script>-->
-    <script src=rnn.js></script>
+<body class=container>
+
+    <h1>Please take a look at the logs!</h1>
+    <p>This example of a vanilla neural network shows how to make predictions on character-level. E.g. we will feed the network to predict the next char in the word "hello" so if we will feed an "h" the network has to guess what the next character could be. In this case it's "e" of course!</p>
+
+
+    <div class="container">
+        <div class="row">
+            <div class="col-sm">
+                <div class=form-group>
+                    <label for=lossTextarea>Loss of the network</label>
+                    <textarea class=form-control id=lossTextarea rows=10></textarea>
+                </div>
+            </div>
+            <div class="col-sm">
+                Loss in graph
+            </div>
+        </div>
+    </div>
+
+    <script src=js/index.js></script>
 
 </body>
 
