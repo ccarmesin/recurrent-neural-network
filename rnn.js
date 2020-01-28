@@ -3,7 +3,7 @@ import * as tf from '@tensorflow/tfjs';
 let weights_ih, weights_ho, weights_hh, hiddenStates, predictions, input, label, wordLength, alphabetLength, dhnext;
 
 // Learning rate
-const lr = .1,
+const lr = .02,
     FORWARD = "forward",
     BACKWARD = "backward";
 
@@ -114,11 +114,11 @@ function train(currentChar, pass) {
 
     if (pass === FORWARD) {
         // FeedForward
-        //console.log("Forward: " + currentChar);
+        console.log("Forward: " + currentChar);
         return feedForward(currentChar);
     } else {
         // BackwardPass
-        //console.log("Backward: " + currentChar);
+        console.log("Backward: " + currentChar);
         return backprop(currentChar);
     }
 
@@ -203,9 +203,6 @@ function loss(prediction, label) {
 // t = current sequence the feed into the network
 function predict(t) {
 
-    //console.log("Hidden state " + t);
-    //hiddenStates[t].print();
-
     // Multiply weight matrix from input to hidden with the input data, like in a simple neural network
     const inputOutputRaw = tf.matMul(weights_ih, input[t]);
 
@@ -214,6 +211,6 @@ function predict(t) {
 
     const hiddenOutput = tf.add(hiddenStateOutputRaw, inputOutputRaw).tanh();
 
-    return tf.matMul(weights_ho, hiddenOutput).sigmoid();
+    return tf.matMul(weights_ho, hiddenOutput).transpose().sigmoid().transpose();
 
 }
