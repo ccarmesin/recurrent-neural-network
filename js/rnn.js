@@ -40,6 +40,10 @@ export class Rnn {
         // Store input as first prediction, so that the input to the input layer is the general input of the network
         this.predictions[-1] = dataset.xs[0];
 
+        // Set callback for updating the UI during training
+        this.ui = uiCallbacks;
+
+        // States
         this.FORWARD = "forward";
         this.BACKWARD = "backward";
 
@@ -50,9 +54,10 @@ export class Rnn {
      */
     async train() {
 
-        for (let i = 0; i < this.epochs; i++) {
+        for (let epoch = 0; epoch < this.epochs; epoch++) {
 
             this.execute(0, this.FORWARD);
+            this.calculateLearnState(epoch);
 
         }
 
@@ -150,6 +155,32 @@ export class Rnn {
 
         const gradientErrors = errors.dataSync().map(x => x * (1 - x));
         return tf.tensor(gradientErrors, errors.shape);
+
+    }
+
+    calculateLearnState(epoch) {
+        
+        // Loss for the entire sequence
+        let sequenceLoss = 0;
+        let sequenceAccuracy = 0;
+
+        for (let t = 0; t < this.dataset.timesteps; t++) {
+
+            // Loss at this timestep
+            const currentLoss = tf.losses.softmaxCrossEntropy(this.dataset.ys[t].transpose(), this.predictions[t].transpose()).dataSync()[0];
+            sequenceLoss += currentLoss;
+            const predIndex = this.predictions[t].argMax().dataSync()[0];
+            const lblIndex = this.dataset.ys[t].argMax().dataSync()[0];
+            if(predIndex === lblIndex) sequenceAccuracy++;
+
+        }
+        
+        // Estimate real acc by dividing the timesteps
+        sequenceAccuracy = sequenceAccuracy / this.dataset.timesteps;
+        
+        this.ui.logLoss(epoch, sequenceLoss);
+        this.ui.logAccuracy(epoch, sequenceAccuracy);
+        console.log('Epoch: ', epoch, 'Loss: ', sequenceLoss, 'Acc: ', sequenceAccuracy);
 
     }
 
