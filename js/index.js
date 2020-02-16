@@ -1,5 +1,6 @@
 import * as losses from './losses';
 import * as datasets from './datasets';
+import * as learningRate from './learningRates';
 import * as ui from './ui';
 import {
     Rnn
@@ -13,8 +14,8 @@ const architecture = {
 
 const hyperparameters = {
     loss: losses.crossEntropy,
-    lr: .06,
-    epochs: 10
+    lr: learningRate.dynamicLr,
+    epochs: 100
 }
 
 const uiCallbacks = {
