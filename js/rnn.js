@@ -5,7 +5,9 @@ export class Rnn {
     constructor(architecture, hyperparameters, dataset, uiCallbacks) {
 
         // Hyperparameters
-        this.lr = hyperparameters.lr;
+        // Learningrate is calculated by the learnFunction during training
+        this.learnFunction = hyperparameters.lr;
+        this.lr = .01;
 
         // Hyperparameters
         this.epochs = hyperparameters.epochs;
@@ -63,7 +65,7 @@ export class Rnn {
 
     }
 
-    execute(t, pass) {
+    async execute(t, pass) {
 
         // Change to backwardPass
         if (t === this.dataset.timesteps) {
@@ -158,7 +160,7 @@ export class Rnn {
 
     }
 
-    calculateLearnState(epoch) {
+    async calculateLearnState(epoch) {
         
         // Loss for the entire sequence
         let sequenceLoss = 0;
@@ -167,7 +169,7 @@ export class Rnn {
         for (let t = 0; t < this.dataset.timesteps; t++) {
 
             // Loss at this timestep
-            const currentLoss = tf.losses.softmaxCrossEntropy(this.dataset.ys[t].transpose(), this.predictions[t].transpose()).dataSync()[0];
+            const currentLoss = tf.losses.sigmoidCrossEntropy(this.dataset.ys[t].transpose(), this.predictions[t].transpose()).dataSync()[0];
             sequenceLoss += currentLoss;
             const predIndex = this.predictions[t].argMax().dataSync()[0];
             const lblIndex = this.dataset.ys[t].argMax().dataSync()[0];
@@ -177,6 +179,10 @@ export class Rnn {
         
         // Estimate real acc by dividing the timesteps
         sequenceAccuracy = sequenceAccuracy / this.dataset.timesteps;
+        
+        // Calculate learnRate for the next sequence based on given learnFunction
+        this.lr = this.learnFunction(epoch, this.epochs);
+        
         
         this.ui.logLoss(epoch, sequenceLoss);
         this.ui.logAccuracy(epoch, sequenceAccuracy);
