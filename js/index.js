@@ -15,7 +15,7 @@ const architecture = {
 const hyperparameters = {
     loss: losses.crossEntropy,
     lr: learningRate.dynamicLr,
-    epochs: 100
+    epochs: 20
 }
 
 const uiCallbacks = {

@@ -65,6 +65,16 @@ export class Rnn {
 
     }
 
+    /**
+     * Helper function for the training process
+     *
+     * @param {number} t indicator for the sequence of the network(current timestep)
+     * @param {number} pass contains information about the current pass(forward or backward)
+     *
+     * @return {function} feedforward
+     * @return {function} backprop
+     * @return {function} null if epoch training is complete
+     */
     async execute(t, pass) {
 
         // Change to backwardPass
@@ -91,7 +101,13 @@ export class Rnn {
 
     }
 
-    // t = current sequence the feed into the network
+    /**
+     * Pass data though the network
+     *
+     * @param {number} t indicator for the sequence of the network(current timestep)
+     *
+     * @return {function} execute the next sequence
+     */
     feedForward(t) {
 
         // Multiply weight matrix from input to hidden with the input data, like in a simple neural network
@@ -110,7 +126,13 @@ export class Rnn {
 
     }
 
-    // t = current timestep
+    /**
+     * Backpropagte though the network
+     *
+     * @param {number} t indicator for the sequence of the network(current timestep)
+     *
+     * @return {function} execute the next sequence
+     */
     backprop(t) {
 
         // Calculate error of output layer
@@ -152,7 +174,13 @@ export class Rnn {
 
     }
 
-    // Compute the derivative of the sigmoid activation function
+    /**
+     * Compute the derivative of the sigmoid activation function
+     *
+     * @param {tensor} errors raw
+     *
+     * @return {tensor} errors activated
+     */
     sigmoidDerivative(errors) {
 
         const gradientErrors = errors.dataSync().map(x => x * (1 - x));
@@ -160,8 +188,13 @@ export class Rnn {
 
     }
 
+    /**
+     * Calculate the current state of the network(including lr, loss and accuracy)
+     *
+     * @param {number} epoch of the network
+     */
     async calculateLearnState(epoch) {
-        
+
         // Loss for the entire sequence
         let sequenceLoss = 0;
         let sequenceAccuracy = 0;
@@ -173,17 +206,17 @@ export class Rnn {
             sequenceLoss += currentLoss;
             const predIndex = this.predictions[t].argMax().dataSync()[0];
             const lblIndex = this.dataset.ys[t].argMax().dataSync()[0];
-            if(predIndex === lblIndex) sequenceAccuracy++;
+            if (predIndex === lblIndex) sequenceAccuracy++;
 
         }
-        
+
         // Estimate real acc by dividing the timesteps
         sequenceAccuracy = sequenceAccuracy / this.dataset.timesteps;
-        
+
         // Calculate learnRate for the next sequence based on given learnFunction
         this.lr = this.learnFunction(epoch, this.epochs);
-        
-        
+
+
         this.ui.logLoss(epoch, sequenceLoss);
         this.ui.logAccuracy(epoch, sequenceAccuracy);
         console.log('Epoch: ', epoch, 'Loss: ', sequenceLoss, 'Acc: ', sequenceAccuracy);
@@ -191,7 +224,6 @@ export class Rnn {
     }
 
     /**
-     *
      * Make predictions on the model
      * Make sure you have train it before:)
      *
